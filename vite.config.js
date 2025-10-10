@@ -7,9 +7,13 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Use '0.0.0.0' para ser mais explícito
     port: 5177,
+
+hmr: {
+      host: 'command.meshwave.com.br',
+      protocol: 'wss',
+    },
+
     strictPort: true,
-    allowedHosts: [
-      'command.meshwave.com.br'
-    ]
+  
   }
 })

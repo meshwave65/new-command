@@ -1,7 +1,7 @@
 <!--
 Projeto: SOFIA Command Center
-Versão: 3.1 (Correção de Sintaxe)
-Data: 01/10/2025
+Versão: 3.2 (Layout Responsivo Corrigido)
+Data: 06/10/2025
 Arquivo: /home/mesh/sofia-command-center/src/components/CommandCenter.vue
 -->
 <script setup>
@@ -18,7 +18,7 @@ const availableIAs = ref([
   { name: 'ChatGPT', url: 'https://chat.openai.com/' },
   { name: 'Google Gemini', url: 'https://gemini.google.com/' },
   { name: 'Claude', url: 'https://claude.ai/' },
-] );
+]  );
 const currentIaUrl = ref(availableIAs.value[0].url);
 
 // --- Estado da Interface ---
@@ -212,11 +212,14 @@ html, body { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-
 }
 
 .sofia-sidecar {
-  width: 450px;
+  width: 30%;
   flex-shrink: 0;
-  display: flex;
+  /* [CORREÇÃO] Transforma o sidecar em um contêiner flex vertical */
+  display: flex; 
   flex-direction: column;
   background-color: #2a2a2a;
+  /* [CORREÇÃO] Garante que a altura não ultrapasse a da tela */
+  height: 100vh;
 }
 
 .ia-header { padding: 8px 10px; background-color: #2a2a2a; border-bottom: 1px solid #444; }
@@ -251,12 +254,48 @@ html, body { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-
 .consolidated-session .scoreboard-item p { font-size: 0.9rem; font-weight: normal; color: #ccc; }
 .consolidated-session .scoreboard-item p span { font-size: 0.7rem; }
 .consolidated-session .sublabel { font-size: 0.6rem !important; color: #777 !important; margin-top: 2px; }
-.sidecar-content { padding: 15px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1; min-height: 0; overflow: hidden; }
-.prompt-box { display: flex; flex-direction: column; }
-.prompt-box.original-box { flex: 2; min-height: 0; }
-.prompt-box.condensed-box { flex: 2; min-height: 0; }
+
+.sidecar-content { 
+  padding: 15px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  /* [CORREÇÃO] Faz esta área crescer para ocupar o espaço vertical restante */
+  flex-grow: 1; 
+  min-height: 0; 
+  /* [CORREÇÃO] Remove o overflow hidden que escondia o conteúdo */
+}
+
+.prompt-box { 
+  display: flex; 
+  flex-direction: column; 
+  /* [CORREÇÃO] Define que as caixas de prompt devem crescer igualmente */
+  flex-grow: 1;
+  /* [CORREÇÃO] Necessário para que o flex-grow funcione corretamente em contêineres aninhados */
+  min-height: 0;
+}
+
+/* [REMOVIDO] As regras abaixo não são mais necessárias, pois o flex-grow cuida disso */
+/* .prompt-box.original-box { flex: 2; min-height: 0; } */
+/* .prompt-box.condensed-box { flex: 2; min-height: 0; } */
+
 .prompt-box label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.85rem; }
-.prompt-box textarea { width: 100%; height: 100%; background-color: #1e1e1e; border: 1px solid #444; border-radius: 4px; color: #e0e0e0; padding: 8px; font-size: 0.9rem; box-sizing: border-box; resize: vertical; }
+
+.prompt-box textarea { 
+  width: 100%; 
+  /* [CORREÇÃO] Faz o textarea preencher 100% da altura do seu pai (.prompt-box) */
+  height: 100%; 
+  background-color: #1e1e1e; 
+  border: 1px solid #444; 
+  border-radius: 4px; 
+  color: #e0e0e0; 
+  padding: 8px; 
+  font-size: 0.9rem; 
+  box-sizing: border-box; 
+  /* [CORREÇÃO] Impede o redimensionamento manual que quebra o layout */
+  resize: none; 
+}
+
 .controls { flex-shrink: 0; }
 .inject-btn { flex-shrink: 0; }
 .mode-selector { display: flex; }

@@ -1,79 +1,42 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* --- [NOVO] Layout Responsivo para Janelas de Texto --- */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* 
+  Assumindo que suas janelas de texto (ou os contêineres delas) 
+  tenham a classe '.text-window'. Se for outra, apenas renomeie.
+*/
+.text-window {
+  /* Substitui tamanhos fixos (ex: width: 500px) por porcentagens */
+  width: 90%; /* Ocupa 90% do contêiner pai */
+  max-width: 600px; /* Evita que fique largo demais em telas grandes */
+  
+  /* Usa a altura da viewport (vh) para se adaptar à tela */
+  height: 40vh; /* Ocupa 40% da altura da tela */
+  
+  /* Garante um tamanho mínimo para não ficar ilegível em telas pequenas */
+  min-height: 200px; 
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  /* Adiciona margem para centralizar e dar espaço */
+  margin: 1rem auto;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
+  /* Mantém outras propriedades importantes */
+  overflow-y: auto; /* Garante a barra de rolagem vertical se o conteúdo for grande */
+  padding: 1rem;
+  border: 1px solid #444;
+  background-color: rgba(10, 10, 20, 0.7);
+  backdrop-filter: blur(5px); /* Efeito de vidro fosco, se desejar */
+  color: #e0e0e0;
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-.card {
-  padding: 2em;
+/* Para organizar múltiplas janelas, use um contêiner flexbox */
+.windows-container {
+  display: flex;
+  flex-wrap: wrap; /* Permite que as janelas quebrem para a linha de baixo */
+  justify-content: center; /* Centraliza as janelas */
+  gap: 20px; /* Espaço entre as janelas */
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box; /* Garante que o padding não estoure o layout */
 }
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}

@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5177,
 
 hmr: {
-      host: 'command.meshwave.com.br',
+      host: 'condenser.meshwave.com.br',
       protocol: 'wss',
     },
 

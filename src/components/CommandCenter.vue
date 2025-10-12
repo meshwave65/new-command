@@ -1,311 +1,298 @@
-<!--
-Projeto: SOFIA Command Center
-Versão: 3.2 (Layout Responsivo Corrigido)
-Data: 06/10/2025
-Arquivo: /home/mesh/sofia-command-center/src/components/CommandCenter.vue
--->
-<script setup>
-import { ref, onMounted } from 'vue';
+<script>
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
-// --- Configurações ---
-const API_BASE_URL = 'https://sofia-ctl8.onrender.com';
-const CONDENSER_ENDPOINT = '/api/v1/condenser/run';
+export default {
+  data() {
+    return {
+      // --- Estado da Aplicação ---
+      isOptimizing: false,
+      isFirstOptimization: true,
+      showLatencyWarning: false,
+      optimizationMode: 'human', // 'human' ou 'llm'
+      
+      // --- Dados do Usuário e Consentimento ---
+      userId: null,
+      shareLocationData: true,
 
-// --- Lista de IAs e Estado de Navegação ---
-const availableIAs = ref([
-  { name: 'Simulador Local', url: '/fake-ia.html' },
-  { name: 'ChatGPT', url: 'https://chat.openai.com/' },
-  { name: 'Google Gemini', url: 'https://gemini.google.com/' },
-  { name: 'Claude', url: 'https://claude.ai/' },
-]  );
-const currentIaUrl = ref(availableIAs.value[0].url);
+      // --- Textos ---
+      originalText: "Importante: O brilho sutil na cor de destaque atrai o olhar. A Economia de Água é apresentada como uma métrica clara e direta, com um ícone discreto, mas elegante. A lógica aqui é mostrar, não apenas dizer. O usuário vê o benefício ambiental que ele gerou com aquela única otimização.",
+      optimizedText: "O resultado da otimização aparecerá aqui...",
 
-// --- Estado da Interface ---
-const originalPrompt = ref('');
-const condensedPrompt = ref('');
-const isLoading = ref(false);
-const error = ref(null);
-const condensationMode = ref('summary');
-const iframeRef = ref(null);
+      // --- Métricas ---
+      originalChars: 0,
+      condensedChars: 0,
+      reductionPercentage: 0.0,
+      h2oSaved: 0,
+      energySaved: 0,
+      co2Avoided: 0,
 
-// --- Estado para o Placar Consolidado ---
-const totalWaterSaved = ref(0);
-const totalCarbonSaved = ref(0);
-
-// --- Métricas da Última Otimização ---
-const lastReduction = ref({
-  original: 0,
-  condensed: 0,
-  percentage: 0,
-  water: 0,
-  carbon: 0,
-});
-
-// --- Constantes de Cálculo ---
-const WATER_SAVED_AT_100_PERCENT = 652;
-const CARBON_SAVED_AT_100_PERCENT = 0.40;
-
-// --- Funções ---
-
-onMounted(() => {
-  totalWaterSaved.value = parseFloat(localStorage.getItem('totalWaterSaved') || 0);
-  totalCarbonSaved.value = parseFloat(localStorage.getItem('totalCarbonSaved') || 0);
-});
-
-async function handleCondense() {
-  if (!originalPrompt.value.trim()) return;
-  isLoading.value = true;
-  error.value = null;
-  condensedPrompt.value = '';
-
-  try {
-    const response = await axios.post(`${API_BASE_URL}${CONDENSER_ENDPOINT}`, {
-      text: originalPrompt.value,
-      mode: condensationMode.value
-    });
-    condensedPrompt.value = response.data.condensed_text;
-
-    const originalLength = originalPrompt.value.length;
-    const condensedLength = condensedPrompt.value.length;
-    const reductionPercentage = ((1 - (condensedLength / originalLength)) * 100);
-    const waterSaved = (WATER_SAVED_AT_100_PERCENT * (reductionPercentage / 100));
-    const carbonSaved = (CARBON_SAVED_AT_100_PERCENT * (reductionPercentage / 100));
-
-    lastReduction.value = {
-      original: originalLength,
-      condensed: condensedLength,
-      percentage: reductionPercentage,
-      water: waterSaved,
-      carbon: carbonSaved,
+      // --- Configuração ---
+      apiUrl: ''  // Vazio para paths relativos com proxy Vite. Se CORS configurado no backend, mude para 'http://localhost:8000'
     };
-
-    totalWaterSaved.value += waterSaved;
-    totalCarbonSaved.value += carbonSaved;
-
-    localStorage.setItem('totalWaterSaved', totalWaterSaved.value);
-    localStorage.setItem('totalCarbonSaved', totalCarbonSaved.value);
-
-  } catch (err) {
-    error.value = "Falha ao conectar ao Agente Condensador.";
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-function injectToIA() {
-  if (!condensedPrompt.value || !iframeRef.value) return;
-  
-  try {
-    const targetTextarea = iframeRef.value.contentWindow.document.getElementById('ia-prompt-textarea');
-    if (targetTextarea) {
-      targetTextarea.value = condensedPrompt.value;
-      targetTextarea.focus();
-    } else {
-      console.warn("Não foi possível encontrar o campo de texto ('ia-prompt-textarea') no iframe. A injeção só funciona no simulador local.");
-      alert("A injeção de texto automática só é compatível com o 'Simulador Local'. Para outras IAs, por favor, copie e cole o texto manualmente.");
+  },
+  computed: {
+    buttonText() {
+      if (this.isOptimizing && this.isFirstOptimization) return 'Ativando Servidores...';
+      if (this.isOptimizing) return 'Otimizando...';
+      return 'OTIMIZAR';
     }
-  } catch (e) {
-    console.error("Erro de segurança ao tentar acessar o conteúdo do iframe. Isso é esperado ao carregar sites de terceiros (ex: ChatGPT).", e);
-    alert("Não é possível interagir com o conteúdo de sites externos por motivos de segurança do navegador. Por favor, copie e cole o texto otimizado manualmente.");
+  },
+  watch: {
+    shareLocationData(newValue) {
+      localStorage.setItem('meshwalker_consent', newValue);
+    },
+    originalText(newValue) {
+      this.originalChars = newValue.length;
+      this.calculateImpact(this.originalChars, this.condensedChars);
+    }
+  },
+  created() {
+    this.initializeUserId();
+    this.loadConsentPreference();
+    this.originalChars = this.originalText.length;
+    this.calculateImpact(this.originalChars, 0);
+  },
+  methods: {
+    // --- Inicialização ---
+    initializeUserId() {
+      let userId = this.getCookie('meshwalker_user_id');
+      if (!userId) {
+        userId = uuidv4();
+        this.setCookie('meshwalker_user_id', userId, 365);
+      }
+      this.userId = userId;
+    },
+    loadConsentPreference() {
+      const consent = localStorage.getItem('meshwalker_consent');
+      if (consent !== null) this.shareLocationData = JSON.parse(consent);
+    },
+
+    // --- Lógica Principal (AJUSTADA: Removida chamada para logInteraction) ---
+    async optimizeText() {
+      if (this.isOptimizing || !this.originalText.trim()) return;
+      this.isOptimizing = true;
+      this.optimizedText = "";
+      this.showLatencyWarning = this.isFirstOptimization;
+
+      const prompt = `Modo: ${this.optimizationMode}. Texto: ${this.originalText}`;
+
+      try {
+        console.log('Enviando requisição para otimizar:', `${this.apiUrl}/api/v1/condenser/run`);
+        const response = await axios.post(`${this.apiUrl}/api/v1/condenser/run`, 
+          { text: prompt },
+          { timeout: 120000 }
+        );
+        
+        console.log('Resposta recebida:', response.data);
+        this.optimizedText = response.data.condensed_text || 'Erro: condensed_text não encontrado na resposta.';
+
+        this.calculateImpact(this.originalText.length, this.optimizedText.length);
+        // REMOVIDO: await this.logInteraction(); // Endpoint não existe no backend atual
+
+      } catch (error) {
+        console.error("Erro ao otimizar:", error);
+        if (error.message.includes('Network Error') || error.code === 'ERR_NETWORK') {
+          this.optimizedText = "Erro de rede (possivelmente CORS ou backend offline). Verifique se SOFIA está rodando em http://localhost:8000 e configure CORS ou proxy.";
+        } else {
+          this.optimizedText = `Ocorreu um erro ao conectar com SOFIA: ${error.message}. Verifique o console.`;
+        }
+        this.calculateImpact(this.originalText.length, 0);
+      } finally {
+        this.isOptimizing = false;
+        this.isFirstOptimization = false;
+        this.showLatencyWarning = false;
+      }
+    },
+
+    // --- Lógica de Cálculo de Impacto ---
+    calculateImpact(originalLength, condensedLength) {
+      const BASE_COST_H2O_ML = 562; 
+      const BASE_COST_ENERGY_KWH = 0.08;
+      const BASE_COST_CO2_G = 0.5;
+
+      this.originalChars = originalLength;
+      this.condensedChars = condensedLength;
+
+      const reductionPercentage = originalLength > 0 ? (1 - (condensedLength / originalLength)) * 100 : 0;
+      this.reductionPercentage = reductionPercentage;
+
+      this.h2oSaved = BASE_COST_H2O_ML * (reductionPercentage / 100);
+      this.energySaved = BASE_COST_ENERGY_KWH * (reductionPercentage / 100);
+      this.co2Avoided = BASE_COST_CO2_G * (reductionPercentage / 100);
+    },
+
+    // --- Log de Interação (MANTER COMENTADO: Endpoint não existe no backend atual) ---
+    async logInteraction() {
+      const payload = {
+        sponsor: 'Carbon Zero',
+        user_id: this.userId,
+        reduction_percentage: parseFloat(this.reductionPercentage.toFixed(2)),
+        h2o_saved_ml: parseFloat(this.h2oSaved.toFixed(2)),
+        energy_saved_kwh: parseFloat(this.energySaved.toFixed(5)),
+        co2_avoided_g: parseFloat(this.co2Avoided.toFixed(5)),
+        collect_location: this.shareLocationData
+      };
+      try {
+        console.log('Enviando log de interação (se endpoint existir):', `${this.apiUrl}/api/v1/interactions/log`);
+        await axios.post(`${this.apiUrl}/api/v1/interactions/log`, payload);
+        console.log('Interação logada com sucesso.');
+      } catch (error) {
+        console.warn("Falha ao registrar interação (endpoint /api/v1/interactions/log não existe no backend).", error);
+      }
+    },
+
+    // --- Métodos de Utilidade ---
+    setOptimizationMode(mode) {
+      this.optimizationMode = mode;
+    },
+    clearInputText() {
+      this.originalText = '';
+      this.optimizedText = 'O resultado da otimização aparecerá aqui...';
+      this.calculateImpact(0, 0);
+    },
+    copyOutputText() {
+      if (!this.optimizedText || this.optimizedText.startsWith("Ocorreu um erro")) return;
+      navigator.clipboard.writeText(this.optimizedText).then(() => {
+        alert("Texto copiado para a área de transferência!");
+      }).catch(err => console.error('Erro ao copiar texto: ', err));
+    },
+
+    // --- Funções Auxiliares de Cookie ---
+    setCookie(name, value, days) {
+      let expires = "";
+      if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    },
+    getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+      }
+      return null;
+    }
   }
-}
+};
 </script>
 
+<!-- O <template> permanece o mesmo, sem alterações -->
 <template>
-  <div class="command-center-layout">
-    <!-- Coluna Esquerda: Área da IA -->
-    <div class="ia-area">
-      <header class="ia-header">
-        <select v-model="currentIaUrl" class="ia-selector">
-          <option v-for="ia in availableIAs" :key="ia.url" :value="ia.url">
-            {{ ia.name }}
-          </option>
-        </select>
-      </header>
-      <iframe :src="currentIaUrl" ref="iframeRef" class="ia-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups"></iframe>
-    </div>
+  <div id="app-container">
+    <header class="header">
+      <div class="logo">
+        <img src="/public/logo_meshwave.svg" alt="MeshWave Logo" style="width: 100%; height: auto;">
+      </div>
+      <h1 class="title">Command Center</h1>
+    </header>
 
-    <!-- Coluna Divisória -->
-    <div class="layout-divider"></div>
-
-    <!-- Coluna Direita: SOFIA Sidecar -->
-    <div class="sofia-sidecar">
-      <header class="sidecar-header">
-        <img src="/logo_meshwave.svg" alt="MeshWave Logo" />
-        <h1>SOFIA Command Center</h1>
-      </header>
-      
-      <section class="scoreboard">
-        <h2>Monitor de Impacto Ambiental (MIA)</h2>
-        <div class="scoreboard-metrics current-optimization">
-          <div class="scoreboard-item">
-            <span>💧 Água</span>
-            <p>{{ lastReduction.water.toFixed(0) }} <span>ml</span></p>
-            <span class="sublabel">DA OTIMIZAÇÃO</span>
+    <div class="main-grid">
+      <!-- Coluna da Esquerda com Distribuição Vertical -->
+      <div class="left-column">
+        
+        <div class="card input-card">
+          <div class="card-header">
+            <div class="card-title">Texto a ser Otimizado</div>
+            <button @click="clearInputText" class="utility-btn" title="Limpar texto">Limpar</button>
           </div>
-          <div class="scoreboard-item">
-            <span>🍃 Carbono</span>
-            <p>{{ lastReduction.carbon.toFixed(2) }} <span>gCO₂eq</span></p>
-            <span class="sublabel">DA OTIMIZAÇÃO</span>
-          </div>
-        </div>
-        <div class="scoreboard-metrics consolidated-session">
-          <div class="scoreboard-item">
-            <p>{{ totalWaterSaved.toFixed(0) }} <span>ml</span></p>
-            <span class="sublabel">Consolidado da Sessão</span>
-          </div>
-          <div class="scoreboard-item">
-            <p>{{ totalCarbonSaved.toFixed(2) }} <span>gCO₂eq</span></p>
-            <span class="sublabel">Consolidado da Sessão</span>
-          </div>
-        </div>
-      </section>
-
-      <div class="sidecar-content">
-        <div class="prompt-box original-box">
-          <label for="original-prompt">1. Escreva seu prompt aqui:</label>
-          <textarea id="original-prompt" v-model="originalPrompt"></textarea>
+          <textarea v-model="originalText" placeholder="Insira o texto que deseja condensar..."></textarea>
         </div>
 
-        <div class="controls">
-          <div class="mode-selector">
-            <button @click="condensationMode = 'summary'" :class="{active: condensationMode === 'summary'}">Resumo</button>
-            <button @click="condensationMode = 'llm_optimization'" :class="{active: condensationMode === 'llm_optimization'}">Otimização LLM</button>
+        <div class="card actions-card">
+          <div class="actions-container">
+            <button @click="setOptimizationMode('human')" class="action-btn" :class="{ active: optimizationMode === 'human' }">
+              Resumo para Humanos
+            </button>
+            <button @click="setOptimizationMode('llm')" class="action-btn" :class="{ active: optimizationMode === 'llm' }">
+              Otimização para AI/LLM
+            </button>
+            <button @click="optimizeText" class="optimize-btn-main" :disabled="isOptimizing">
+              {{ buttonText }}
+            </button>
           </div>
-          <button @click="handleCondense" :disabled="isLoading" class="optimize-btn">
-            {{ isLoading ? 'Otimizando...' : '2. Otimizar Texto' }}
-          </button>
+          <div v-if="showLatencyWarning" class="latency-notification">
+            <p><strong>Poupar recursos naturais e energia está no DNA de nossa organização.</strong> Por isso, nossos servidores hibernam para minimizar o consumo. Sua primeira interação pode levar até 90 segundos. As seguintes serão instantâneas.</p>
+          </div>
         </div>
 
-        <div class="prompt-box condensed-box">
-          <label for="condensed-prompt">3. Resultado Otimizado:</label>
-          <textarea id="condensed-prompt" v-model="condensedPrompt" readonly></textarea>
+        <div class="card output-card">
+          <div class="card-header">
+            <div class="card-title">Resultado Otimizado</div>
+            <button @click="copyOutputText" class="utility-btn" title="Copiar resultado">Copiar</button>
+          </div>
+          <textarea :value="optimizedText" readonly placeholder="O resultado da otimização aparecerá aqui..."></textarea>
         </div>
 
-        <button @click="injectToIA" :disabled="!condensedPrompt" class="inject-btn">
-          🚀 Injetar na IA
-        </button>
+      </div>
+
+      <!-- Coluna da Direita (Métricas) -->
+      <div class="right-column">
+        <div class="card">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">ORIGINAL</div>
+              <div class="metric-value">{{ Math.round(originalChars) }}</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">CONDENSADO</div>
+              <div class="metric-value">{{ Math.round(condensedChars) }}</div>
+            </div>
+            <div class="metric-card reduction">
+              <div class="metric-label">REDUÇÃO</div>
+              <div class="metric-value">{{ reductionPercentage.toFixed(1) }}%</div>
+            </div>
+          </div>
+
+          <div class="impact-section">
+            <div class="impact-title-main">MIA-D</div>
+            <div class="impact-title-sub">Monitor de Impacto Ambiental Digital</div>
+            
+            <div class="impact-metrics-grid">
+              <div class="impact-item">
+                <div class="impact-icon">💧</div>
+                <div>
+                  <div class="impact-metric-label">Economia de Água</div>
+                  <div class="impact-metric-value">{{ h2oSaved.toFixed(0) }} <span>ml</span></div>
+                </div>
+              </div>
+              <div class="impact-item">
+                <div class="impact-icon">⚡</div>
+                <div>
+                  <div class="impact-metric-label">Economia de Energia</div>
+                  <div class="impact-metric-value">{{ energySaved.toFixed(3) }} <span>kWh</span></div>
+                </div>
+              </div>
+              <div class="impact-item">
+                <div class="impact-icon">🌱</div>
+                <div>
+                  <div class="impact-metric-label">Carbono Evitado</div>
+                  <div class="impact-metric-value">{{ co2Avoided.toFixed(2) }} <span>gCO₂eq</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sponsor-section">
+            <div class="sponsor-logo">
+              <img src="/public/logo_carbonzero.jpg" alt="Logo Carbon Zero" style="background: white; padding: 5px; border-radius: 8px;">
+            </div>
+            <div class="sponsor-label">Patrocinador Oficial</div>
+          </div>
+
+          <div class="privacy-consent">
+            <input type="checkbox" id="consent-checkbox" v-model="shareLocationData">
+            <label for="consent-checkbox">
+              Concordo com a coleta do meu IP. <strong>Finalidade exclusiva:</strong> gerar dados geográficos agregados sobre o impacto ambiental.
+            </label>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
-
-<style>
-/* Estilos Globais */
-html, body { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #e0e0e0; overflow: hidden; }
-
-.command-center-layout { display: flex; height: 100vh; width: 100vw; }
-
-/* Layout com Coluna Divisória */
-.ia-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0; 
-}
-
-.layout-divider {
-  width: 10px;
-  flex-shrink: 0;
-  background-color: #1e1e1e;
-}
-
-.sofia-sidecar {
-  width: 30%;
-  flex-shrink: 0;
-  /* [CORREÇÃO] Transforma o sidecar em um contêiner flex vertical */
-  display: flex; 
-  flex-direction: column;
-  background-color: #2a2a2a;
-  /* [CORREÇÃO] Garante que a altura não ultrapasse a da tela */
-  height: 100vh;
-}
-
-.ia-header { padding: 8px 10px; background-color: #2a2a2a; border-bottom: 1px solid #444; }
-.ia-selector {
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #555;
-  background-color: #1e1e1e;
-  color: #ccc;
-  box-sizing: border-box;
-  font-size: 0.8rem;
-}
-
-.ia-iframe { width: 100%; height: 100%; border: none; }
-
-.sidecar-header { display: flex; align-items: center; gap: 1rem; padding: 8px 15px; border-bottom: 1px solid #444; flex-shrink: 0; }
-.sidecar-header img { height: 24px; }
-.sidecar-header h1 { font-size: 1rem; font-weight: 300; margin: 0; }
-.scoreboard { padding: 15px; background-color: #333; text-align: center; border-bottom: 1px solid #444; flex-shrink: 0; }
-.scoreboard h2 { margin: 0 0 0.8rem 0; font-size: 0.9rem; font-weight: 600; color: #00aaff; text-transform: uppercase; }
-.scoreboard-metrics { display: flex; justify-content: space-around; align-items: baseline; }
-.scoreboard-item { display: flex; flex-direction: column; }
-.scoreboard-item span { font-size: 0.7rem; color: #aaa; }
-.scoreboard-item p { margin: 0.1rem 0 0 0; }
-.scoreboard-item p span { font-weight: normal; }
-.sublabel { text-transform: uppercase; }
-.current-optimization { margin-bottom: 1rem; }
-.current-optimization .scoreboard-item p { font-size: 1.2rem; font-weight: bold; }
-.current-optimization .scoreboard-item p span { font-size: 0.8rem; }
-.current-optimization .sublabel { font-size: 0.6rem !important; color: #888 !important; margin-top: 2px; }
-.consolidated-session .scoreboard-item p { font-size: 0.9rem; font-weight: normal; color: #ccc; }
-.consolidated-session .scoreboard-item p span { font-size: 0.7rem; }
-.consolidated-session .sublabel { font-size: 0.6rem !important; color: #777 !important; margin-top: 2px; }
-
-.sidecar-content { 
-  padding: 15px; 
-  display: flex; 
-  flex-direction: column; 
-  gap: 10px; 
-  /* [CORREÇÃO] Faz esta área crescer para ocupar o espaço vertical restante */
-  flex-grow: 1; 
-  min-height: 0; 
-  /* [CORREÇÃO] Remove o overflow hidden que escondia o conteúdo */
-}
-
-.prompt-box { 
-  display: flex; 
-  flex-direction: column; 
-  /* [CORREÇÃO] Define que as caixas de prompt devem crescer igualmente */
-  flex-grow: 1;
-  /* [CORREÇÃO] Necessário para que o flex-grow funcione corretamente em contêineres aninhados */
-  min-height: 0;
-}
-
-/* [REMOVIDO] As regras abaixo não são mais necessárias, pois o flex-grow cuida disso */
-/* .prompt-box.original-box { flex: 2; min-height: 0; } */
-/* .prompt-box.condensed-box { flex: 2; min-height: 0; } */
-
-.prompt-box label { display: block; margin-bottom: 0.4rem; font-weight: 600; font-size: 0.85rem; }
-
-.prompt-box textarea { 
-  width: 100%; 
-  /* [CORREÇÃO] Faz o textarea preencher 100% da altura do seu pai (.prompt-box) */
-  height: 100%; 
-  background-color: #1e1e1e; 
-  border: 1px solid #444; 
-  border-radius: 4px; 
-  color: #e0e0e0; 
-  padding: 8px; 
-  font-size: 0.9rem; 
-  box-sizing: border-box; 
-  /* [CORREÇÃO] Impede o redimensionamento manual que quebra o layout */
-  resize: none; 
-}
-
-.controls { flex-shrink: 0; }
-.inject-btn { flex-shrink: 0; }
-.mode-selector { display: flex; }
-.mode-selector button { flex: 1; padding: 5px 8px; border: 1px solid #444; background-color: #333; color: #ccc; cursor: pointer; font-size: 0.8rem; }
-.mode-selector button:first-child { border-radius: 4px 0 0 4px; }
-.mode-selector button:last-child { border-radius: 0 4px 4px 0; }
-.mode-selector button.active { background-color: #007acc; color: white; border-color: #007acc; }
-.optimize-btn, .inject-btn { width: 100%; padding: 6px 8px; font-size: 0.85rem; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; box-sizing: border-box; }
-.optimize-btn { background-color: #007acc; color: white; }
-.inject-btn { background-color: #28a745; color: white; }
-.optimize-btn:disabled, .inject-btn:disabled { background-color: #555; cursor: not-allowed; }
-</style>
-

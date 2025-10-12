@@ -1,6 +1,4 @@
 <script>
-// O SCRIPT JAVASCRIPT DA RESPOSTA ANTERIOR ESTÁ CORRETO E SERÁ MANTIDO.
-// A FALHA FOI APENAS NO TEMPLATE HTML.
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -60,44 +58,40 @@ export default {
       const consent = localStorage.getItem('meshwalker_consent');
       if (consent !== null) this.shareLocationData = JSON.parse(consent);
     },
+
+    // ==================================================
+    // MÉTODO CORRIGIDO E SIMPLIFICADO
+    // ==================================================
     async optimizeText() {
       if (this.isOptimizing || !this.originalText.trim()) return;
       
       this.isOptimizing = true;
-      this.optimizedText = "Processando seu texto... Isso pode levar alguns minutos para textos longos.";
+      this.optimizedText = "Processando...";
       
       if (this.isFirstOptimization) {
         this.showLatencyWarning = true;
       }
 
-      const textToCondense = this.originalText;
-
       try {
+        // 1. Envia EXATAMENTE o que a API espera: { "text": "..." }
         const response = await axios.post(`${this.apiUrl}/api/v1/condenser/run`, 
-          { text: textToCondense },
+          { text: this.originalText },
           { timeout: 300000 } 
         );
         
-        console.log("Resposta da API recebida:", response.data);
-
+        // 2. Pega EXATAMENTE o que a API retorna: "condensed_text"
         this.optimizedText = response.data.condensed_text;
-        
+
+        // 3. Se não vier nada, avisa.
         if (!this.optimizedText) {
-            throw new Error('A resposta da API foi recebida, mas o campo "condensed_text" está vazio ou ausente.');
+            this.optimizedText = "Erro: A API retornou uma resposta vazia.";
         }
 
         this.calculateImpact(this.originalText.length, this.optimizedText.length);
 
       } catch (error) {
-        console.error("Falha ao otimizar:", error);
-        if (error.response) {
-          console.error("Dados do erro do servidor:", error.response.data);
-          this.optimizedText = `Erro do Servidor (${error.response.status}): ${error.response.data.detail || 'Não foi possível processar o texto.'}`;
-        } else if (error.request) {
-          this.optimizedText = "Erro de Rede: Não foi possível conectar ao servidor. Verifique se o backend está online e acessível.";
-        } else {
-          this.optimizedText = `Ocorreu um erro inesperado: ${error.message}`;
-        }
+        console.error("Erro na chamada da API:", error);
+        this.optimizedText = `Ocorreu um erro. Verifique o console (F12) para detalhes.`;
         this.calculateImpact(this.originalText.length, 0);
 
       } finally {
@@ -108,6 +102,8 @@ export default {
         }
       }
     },
+    // ==================================================
+
     calculateImpact(originalLength, condensedLength) {
       const BASE_COST_H2O_ML = 562; 
       const BASE_COST_ENERGY_KWH = 0.08;
@@ -156,9 +152,7 @@ export default {
 };
 </script>
 
-<!-- ================================================== -->
-<!-- TEMPLATE HTML CORRIGIDO -->
-<!-- ================================================== -->
+<!-- O TEMPLATE HTML permanece o mesmo -->
 <template>
   <div id="app-container">
     <header class="header">
@@ -220,7 +214,6 @@ export default {
           <div class="impact-section">
             <div class="impact-title-main">MIA-D</div>
             <div class="impact-title-sub">Monitor de Impacto Ambiental Digital</div>
-            <!-- AQUI ESTAVA O ERRO -->
             <div class="impact-metrics-grid">
               <div class="impact-item">
                 <div class="impact-icon">💧</div>

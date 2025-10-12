@@ -9,7 +9,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 // --- Configurações ---
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://sofia-ctl8.onrender.com';
 const CONDENSER_ENDPOINT = '/api/v1/condenser/run';
 
 // --- Lista de IAs e Estado de Navegação ---

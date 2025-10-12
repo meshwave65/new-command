@@ -187,7 +187,7 @@ export default {
   <div id="app-container">
     <header class="header">
       <div class="logo">
-        <img src="/public/logo_meshwave.svg" alt="MeshWave Logo" style="width: 100%; height: auto;">
+        <img src="/public/logo_meshwave.svg" alt="MeshWave Logo" style="width: 40px; height: auto;">
       </div>
       <h1 class="title">Command Center</h1>
     </header>

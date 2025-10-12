@@ -72,7 +72,7 @@ export default {
       const prompt = `Modo: ${this.optimizationMode}. Texto: ${this.originalText}`;
 
       try {
-        const text = await axios.post(`${this.apiUrl}/api/v1/condenser/run`, 
+        const response = await axios.post(`${this.apiUrl}/api/v1/condenser/run`, 
           { text: prompt },
           { timeout: 120000 }
         );

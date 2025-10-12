@@ -27,7 +27,8 @@ export default {
       co2Avoided: 0,
 
       // --- Configuração ---
-      apiUrl: ''
+      // Deixamos a apiUrl vazia para usar o caminho relativo, aproveitando o CNAME.
+      apiUrl: '' 
     };
   },
   computed: {
@@ -35,11 +36,22 @@ export default {
       if (this.isOptimizing && this.isFirstOptimization) return 'Ativando Servidores...';
       if (this.isOptimizing) return 'Otimizando...';
       return 'OTIMIZAR';
+    },
+    // <-- CORREÇÃO 2: Propriedade computada para o tamanho do texto original
+    // Isso garante que o card "ORIGINAL" atualize em tempo real enquanto o usuário digita.
+    originalTextLength() {
+      return this.originalText.length;
     }
   },
   watch: {
     shareLocationData(newValue) {
       localStorage.setItem('meshwalker_consent', newValue);
+    },
+    // Observa mudanças no texto original para recalcular o impacto inicial
+    originalText(newText) {
+        if (!this.isOptimizing && this.optimizedText.startsWith('O resultado')) {
+            this.calculateImpact(newText.length, 0);
+        }
     }
   },
   created() {
@@ -69,23 +81,29 @@ export default {
       this.optimizedText = "";
       this.showLatencyWarning = this.isFirstOptimization;
 
-      const prompt = `Modo: ${this.optimizationMode}. Texto: ${this.originalText}`;
+      // O texto enviado para a API agora é apenas o texto original.
+      // O modo de otimização pode ser um parâmetro de query se necessário,
+      // ou o backend pode ser simplificado para ter um único modo.
+      // Por enquanto, enviaremos apenas o texto para corresponder à API.
+      const textToCondense = this.originalText;
 
       try {
         const response = await axios.post(`${this.apiUrl}/api/v1/condenser/run`, 
-          { text: prompt },
+          { text: textToCondense }, // Enviando o objeto esperado pela API
           { timeout: 120000 }
         );
         
-        // CORREÇÃO 1: Lendo a resposta do campo "response"
-        this.optimizedText = response.data.response || 'Erro: campo "response" não encontrado na resposta da API.';
+        // <-- CORREÇÃO 1: Lendo a resposta do campo correto "condensed_text"
+        this.optimizedText = response.data.condensed_text || 'Erro: campo "condensed_text" não encontrado na resposta da API.';
 
         this.calculateImpact(this.originalText.length, this.optimizedText.length);
 
       } catch (error) {
         console.error("Erro ao otimizar:", error);
         if (error.message.includes('Network Error') || error.code === 'ERR_NETWORK') {
-          this.optimizedText = "Erro de rede. Verifique se SOFIA está rodando em http://localhost:8000.";
+          this.optimizedText = "Erro de rede. Verifique a configuração do CNAME e se o backend está online.";
+        } else if (error.response && error.response.status === 422) {
+          this.optimizedText = "Erro de validação: O texto enviado é inválido ou está vazio.";
         } else {
           this.optimizedText = `Ocorreu um erro: ${error.message}.`;
         }
@@ -123,7 +141,7 @@ export default {
       this.calculateImpact(0, 0);
     },
     copyOutputText() {
-      if (!this.optimizedText || this.optimizedText.startsWith("Ocorreu um erro")) return;
+      if (!this.optimizedText || this.optimizedText.startsWith("Ocorreu um erro") || this.optimizedText.startsWith("O resultado")) return;
       navigator.clipboard.writeText(this.optimizedText).then(() => {
         alert("Texto copiado para a área de transferência!");
       }).catch(err => console.error('Erro ao copiar texto: ', err));
@@ -200,8 +218,8 @@ export default {
           <div class="metrics-grid">
             <div class="metric-card">
               <div class="metric-label">ORIGINAL</div>
-              <!-- CORREÇÃO 2: Lendo o tamanho do texto em tempo real -->
-              <div class="metric-value">{{ originalText.length }}</div>
+              <!-- CORREÇÃO 2: Usando a propriedade computada para reatividade -->
+              <div class="metric-value">{{ originalTextLength }}</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">CONDENSADO</div>

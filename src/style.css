@@ -40,8 +40,8 @@ body {
 }
 
 .logo img {
-  width: 40px;
-  height: auto;
+  height: 40px;
+  width: auto;
 }
 
 .title {
@@ -88,14 +88,14 @@ body {
 
 /* --- Layout Flexível para Coluna da Esquerda --- */
 .left-column {
-  height: calc(100vh - 8rem); /* Ajuste a altura conforme necessário */
+  height: calc(100vh - 8rem);
 }
 .input-card { flex: 0.4; }
 .actions-card { flex: 0.1; }
 .output-card { flex: 0.4; }
 
 .input-card textarea, .output-card textarea {
-  flex-grow: 1; /* Faz o textarea preencher o espaço do card */
+  flex-grow: 1;
 }
 
 /* --- TEXTAREA --- */
@@ -109,7 +109,7 @@ textarea {
   font-family: var(--fonte-mono);
   font-size: 0.9rem;
   line-height: 1.6;
-  resize: none; /* Desabilita o redimensionamento manual */
+  resize: none;
 }
 
 textarea:focus {

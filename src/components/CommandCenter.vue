@@ -1,15 +1,15 @@
 <script>
+// O SCRIPT JAVASCRIPT DA RESPOSTA ANTERIOR ESTÁ CORRETO E SERÁ MANTIDO.
+// A FALHA FOI APENAS NO TEMPLATE HTML.
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 export default {
   data() {
     return {
-      // ... (outros dados permanecem os mesmos) ...
       isOptimizing: false,
       isFirstOptimization: true,
-      // AVISO: showLatencyWarning será controlado de forma diferente
-      showLatencyWarning: false, 
+      showLatencyWarning: false,
       optimizationMode: 'human',
       userId: null,
       shareLocationData: true,
@@ -25,7 +25,6 @@ export default {
   },
   computed: {
     buttonText() {
-      // Lógica simplificada inspirada no 'isLoading'
       if (this.isOptimizing) return 'Otimizando...';
       return 'OTIMIZAR';
     },
@@ -61,16 +60,12 @@ export default {
       const consent = localStorage.getItem('meshwalker_consent');
       if (consent !== null) this.shareLocationData = JSON.parse(consent);
     },
-
-    // --- LÓGICA PRINCIPAL REVISADA ---
     async optimizeText() {
       if (this.isOptimizing || !this.originalText.trim()) return;
       
       this.isOptimizing = true;
-      this.optimizedText = ""; // Limpa o resultado anterior
+      this.optimizedText = "Processando seu texto... Isso pode levar alguns minutos para textos longos.";
       
-      // CORREÇÃO 1: Controle do aviso de latência
-      // O aviso só aparece se for a primeira vez. Ele será desativado no 'finally'.
       if (this.isFirstOptimization) {
         this.showLatencyWarning = true;
       }
@@ -83,13 +78,10 @@ export default {
           { timeout: 300000 } 
         );
         
-        // DEBUG: Vamos ver o que o backend realmente está enviando
         console.log("Resposta da API recebida:", response.data);
 
-        // Acessa o campo correto
         this.optimizedText = response.data.condensed_text;
         
-        // Se o campo estiver vazio ou não existir, gera um erro controlado
         if (!this.optimizedText) {
             throw new Error('A resposta da API foi recebida, mas o campo "condensed_text" está vazio ou ausente.');
         }
@@ -97,43 +89,32 @@ export default {
         this.calculateImpact(this.originalText.length, this.optimizedText.length);
 
       } catch (error) {
-        // CORREÇÃO 2: Tratamento de erro robusto, inspirado no 'sofia-condenser-pro'
         console.error("Falha ao otimizar:", error);
         if (error.response) {
-          // O servidor respondeu com um status de erro (4xx, 5xx)
           console.error("Dados do erro do servidor:", error.response.data);
           this.optimizedText = `Erro do Servidor (${error.response.status}): ${error.response.data.detail || 'Não foi possível processar o texto.'}`;
         } else if (error.request) {
-          // A requisição foi feita mas não houve resposta (ex: backend offline, timeout, CORS)
           this.optimizedText = "Erro de Rede: Não foi possível conectar ao servidor. Verifique se o backend está online e acessível.";
         } else {
-          // Algum outro erro ocorreu durante a configuração da requisição ou no processamento da resposta
           this.optimizedText = `Ocorreu um erro inesperado: ${error.message}`;
         }
         this.calculateImpact(this.originalText.length, 0);
 
       } finally {
-        // Garante que o estado de 'loading' seja desativado no final
         this.isOptimizing = false;
-        // CORREÇÃO 3: Desativa o aviso de latência aqui, após a primeira tentativa (sucesso ou falha)
         if (this.isFirstOptimization) {
             this.isFirstOptimization = false;
-            // Damos um pequeno tempo para o usuário ler antes de sumir
-            setTimeout(() => { this.showLatencyWarning = false; }, 10000); // Mantém por 10 segundos
+            setTimeout(() => { this.showLatencyWarning = false; }, 10000);
         }
       }
     },
-    // ... (resto dos métodos permanecem os mesmos) ...
     calculateImpact(originalLength, condensedLength) {
       const BASE_COST_H2O_ML = 562; 
       const BASE_COST_ENERGY_KWH = 0.08;
       const BASE_COST_CO2_G = 0.5;
-
       this.condensedChars = condensedLength;
-
       const reductionPercentage = originalLength > 0 ? (1 - (condensedLength / originalLength)) * 100 : 0;
       this.reductionPercentage = reductionPercentage;
-
       this.h2oSaved = BASE_COST_H2O_ML * (reductionPercentage / 100);
       this.energySaved = BASE_COST_ENERGY_KWH * (reductionPercentage / 100);
       this.co2Avoided = BASE_COST_CO2_G * (reductionPercentage / 100);
@@ -175,7 +156,9 @@ export default {
 };
 </script>
 
-<!-- O TEMPLATE HTML permanece o mesmo -->
+<!-- ================================================== -->
+<!-- TEMPLATE HTML CORRIGIDO -->
+<!-- ================================================== -->
 <template>
   <div id="app-container">
     <header class="header">
@@ -237,7 +220,8 @@ export default {
           <div class="impact-section">
             <div class="impact-title-main">MIA-D</div>
             <div class="impact-title-sub">Monitor de Impacto Ambiental Digital</div>
-            <div class.impact-metrics-grid">
+            <!-- AQUI ESTAVA O ERRO -->
+            <div class="impact-metrics-grid">
               <div class="impact-item">
                 <div class="impact-icon">💧</div>
                 <div>

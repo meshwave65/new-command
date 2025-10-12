@@ -9,7 +9,7 @@ export default {
       isOptimizing: false,
       isFirstOptimization: true,
       showLatencyWarning: false,
-      optimizationMode: 'human', // 'human' ou 'llm'
+      optimizationMode: 'human',
       
       // --- Dados do Usuário e Consentimento ---
       userId: null,
@@ -20,7 +20,6 @@ export default {
       optimizedText: "O resultado da otimização aparecerá aqui...",
 
       // --- Métricas ---
-      originalChars: 0,
       condensedChars: 0,
       reductionPercentage: 0.0,
       h2oSaved: 0,
@@ -28,7 +27,7 @@ export default {
       co2Avoided: 0,
 
       // --- Configuração ---
-      apiUrl: ''  // Vazio para paths relativos com proxy Vite. Se CORS configurado no backend, mude para 'http://localhost:8000'
+      apiUrl: ''
     };
   },
   computed: {
@@ -41,17 +40,12 @@ export default {
   watch: {
     shareLocationData(newValue) {
       localStorage.setItem('meshwalker_consent', newValue);
-    },
-    originalText(newValue) {
-      this.originalChars = newValue.length;
-      this.calculateImpact(this.originalChars, this.condensedChars);
     }
   },
   created() {
     this.initializeUserId();
     this.loadConsentPreference();
-    this.originalChars = this.originalText.length;
-    this.calculateImpact(this.originalChars, 0);
+    this.calculateImpact(this.originalText.length, 0);
   },
   methods: {
     // --- Inicialização ---
@@ -68,7 +62,7 @@ export default {
       if (consent !== null) this.shareLocationData = JSON.parse(consent);
     },
 
-    // --- Lógica Principal (AJUSTADA: Removida chamada para logInteraction) ---
+    // --- Lógica Principal ---
     async optimizeText() {
       if (this.isOptimizing || !this.originalText.trim()) return;
       this.isOptimizing = true;
@@ -78,26 +72,24 @@ export default {
       const prompt = `Modo: ${this.optimizationMode}. Texto: ${this.originalText}`;
 
       try {
-        console.log('Enviando requisição para otimizar:', `${this.apiUrl}/api/v1/condenser/run`);
         const response = await axios.post(`${this.apiUrl}/api/v1/condenser/run`, 
           { text: prompt },
           { timeout: 120000 }
         );
         
-        console.log('Resposta recebida:', response.data);
-        this.optimizedText = response.data.condensed_text || 'Erro: condensed_text não encontrado na resposta.';
+        // CORREÇÃO 1: Lendo a resposta do campo "response"
+        this.optimizedText = response.data.response || 'Erro: campo "response" não encontrado na resposta da API.';
 
         this.calculateImpact(this.originalText.length, this.optimizedText.length);
-        // REMOVIDO: await this.logInteraction(); // Endpoint não existe no backend atual
 
       } catch (error) {
         console.error("Erro ao otimizar:", error);
         if (error.message.includes('Network Error') || error.code === 'ERR_NETWORK') {
-          this.optimizedText = "Erro de rede (possivelmente CORS ou backend offline). Verifique se SOFIA está rodando em http://localhost:8000 e configure CORS ou proxy.";
+          this.optimizedText = "Erro de rede. Verifique se SOFIA está rodando em http://localhost:8000.";
         } else {
-          this.optimizedText = `Ocorreu um erro ao conectar com SOFIA: ${error.message}. Verifique o console.`;
+          this.optimizedText = `Ocorreu um erro: ${error.message}.`;
         }
-        this.calculateImpact(this.originalText.length, 0);
+        this.calculateImpact(this.originalText.length, 0 );
       } finally {
         this.isOptimizing = false;
         this.isFirstOptimization = false;
@@ -111,7 +103,6 @@ export default {
       const BASE_COST_ENERGY_KWH = 0.08;
       const BASE_COST_CO2_G = 0.5;
 
-      this.originalChars = originalLength;
       this.condensedChars = condensedLength;
 
       const reductionPercentage = originalLength > 0 ? (1 - (condensedLength / originalLength)) * 100 : 0;
@@ -120,26 +111,6 @@ export default {
       this.h2oSaved = BASE_COST_H2O_ML * (reductionPercentage / 100);
       this.energySaved = BASE_COST_ENERGY_KWH * (reductionPercentage / 100);
       this.co2Avoided = BASE_COST_CO2_G * (reductionPercentage / 100);
-    },
-
-    // --- Log de Interação (MANTER COMENTADO: Endpoint não existe no backend atual) ---
-    async logInteraction() {
-      const payload = {
-        sponsor: 'Carbon Zero',
-        user_id: this.userId,
-        reduction_percentage: parseFloat(this.reductionPercentage.toFixed(2)),
-        h2o_saved_ml: parseFloat(this.h2oSaved.toFixed(2)),
-        energy_saved_kwh: parseFloat(this.energySaved.toFixed(5)),
-        co2_avoided_g: parseFloat(this.co2Avoided.toFixed(5)),
-        collect_location: this.shareLocationData
-      };
-      try {
-        console.log('Enviando log de interação (se endpoint existir):', `${this.apiUrl}/api/v1/interactions/log`);
-        await axios.post(`${this.apiUrl}/api/v1/interactions/log`, payload);
-        console.log('Interação logada com sucesso.');
-      } catch (error) {
-        console.warn("Falha ao registrar interação (endpoint /api/v1/interactions/log não existe no backend).", error);
-      }
     },
 
     // --- Métodos de Utilidade ---
@@ -182,20 +153,17 @@ export default {
 };
 </script>
 
-<!-- O <template> permanece o mesmo, sem alterações -->
 <template>
   <div id="app-container">
     <header class="header">
       <div class="logo">
-        <img src="/public/logo_meshwave.svg" alt="MeshWave Logo" style="width: 40px; height: auto;">
+        <img src="/logo_meshwave.svg" alt="MeshWave Logo">
       </div>
       <h1 class="title">Command Center</h1>
     </header>
 
     <div class="main-grid">
-      <!-- Coluna da Esquerda com Distribuição Vertical -->
       <div class="left-column">
-        
         <div class="card input-card">
           <div class="card-header">
             <div class="card-title">Texto a ser Otimizado</div>
@@ -203,7 +171,6 @@ export default {
           </div>
           <textarea v-model="originalText" placeholder="Insira o texto que deseja condensar..."></textarea>
         </div>
-
         <div class="card actions-card">
           <div class="actions-container">
             <button @click="setOptimizationMode('human')" class="action-btn" :class="{ active: optimizationMode === 'human' }">
@@ -220,7 +187,6 @@ export default {
             <p><strong>Poupar recursos naturais e energia está no DNA de nossa organização.</strong> Por isso, nossos servidores hibernam para minimizar o consumo. Sua primeira interação pode levar até 90 segundos. As seguintes serão instantâneas.</p>
           </div>
         </div>
-
         <div class="card output-card">
           <div class="card-header">
             <div class="card-title">Resultado Otimizado</div>
@@ -228,16 +194,14 @@ export default {
           </div>
           <textarea :value="optimizedText" readonly placeholder="O resultado da otimização aparecerá aqui..."></textarea>
         </div>
-
       </div>
-
-      <!-- Coluna da Direita (Métricas) -->
       <div class="right-column">
         <div class="card">
           <div class="metrics-grid">
             <div class="metric-card">
               <div class="metric-label">ORIGINAL</div>
-              <div class="metric-value">{{ Math.round(originalChars) }}</div>
+              <!-- CORREÇÃO 2: Lendo o tamanho do texto em tempo real -->
+              <div class="metric-value">{{ originalText.length }}</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">CONDENSADO</div>
@@ -248,11 +212,9 @@ export default {
               <div class="metric-value">{{ reductionPercentage.toFixed(1) }}%</div>
             </div>
           </div>
-
           <div class="impact-section">
             <div class="impact-title-main">MIA-D</div>
             <div class="impact-title-sub">Monitor de Impacto Ambiental Digital</div>
-            
             <div class="impact-metrics-grid">
               <div class="impact-item">
                 <div class="impact-icon">💧</div>
@@ -277,14 +239,12 @@ export default {
               </div>
             </div>
           </div>
-
           <div class="sponsor-section">
             <div class="sponsor-logo">
-              <img src="/public/logo_carbonzero.jpg" alt="Logo Carbon Zero" style="background: white; padding: 5px; border-radius: 8px;">
+              <img src="/logo_carbonzero.jpg" alt="Logo Carbon Zero" style="background: white; padding: 5px; border-radius: 8px;">
             </div>
             <div class="sponsor-label">Patrocinador Oficial</div>
           </div>
-
           <div class="privacy-consent">
             <input type="checkbox" id="consent-checkbox" v-model="shareLocationData">
             <label for="consent-checkbox">

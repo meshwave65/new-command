@@ -18,7 +18,6 @@ export default {
       h2oSaved: 0,
       energySaved: 0,
       co2Avoided: 0,
-      apiUrl: ''
     };
   },
   computed: {
@@ -60,7 +59,7 @@ export default {
     },
 
     // ==================================================
-    // MÉTODO CORRIGIDO E SIMPLIFICADO
+    // MÉTODO COM A URL CORRETA DO BACKEND
     // ==================================================
     async optimizeText() {
       if (this.isOptimizing || !this.originalText.trim()) return;
@@ -73,18 +72,17 @@ export default {
       }
 
       try {
-        // 1. Envia EXATAMENTE o que a API espera: { "text": "..." }
-        const response = await axios.post(`${this.apiUrl}/api/v1/condenser/run`, 
+        // CORREÇÃO FINAL: USANDO A URL DO BACKEND QUE VOCÊ INDICOU
+        const response = await axios.post(
+          'https://sofia-c1t8.onrender.com/api/v1/condenser/run', 
           { text: this.originalText },
           { timeout: 300000 } 
-        );
+         );
         
-        // 2. Pega EXATAMENTE o que a API retorna: "condensed_text"
         this.optimizedText = response.data.condensed_text;
 
-        // 3. Se não vier nada, avisa.
-        if (!this.optimizedText) {
-            this.optimizedText = "Erro: A API retornou uma resposta vazia.";
+        if (this.optimizedText === undefined || this.optimizedText === null) {
+            this.optimizedText = "Erro: A API retornou uma resposta, mas o campo 'condensed_text' está vazio ou ausente.";
         }
 
         this.calculateImpact(this.originalText.length, this.optimizedText.length);

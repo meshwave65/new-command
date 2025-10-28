@@ -1,262 +1,341 @@
-/* --- RESET BÁSICO E VARIÁVEIS DE COR --- */
+/* — RESET BÁSICO E VARIÁVEIS DE COR — */
 :root {
-  --cor-fundo-principal: #111827;
-  --cor-fundo-card: #1F2937;
-  --cor-borda: #374151;
-  --cor-texto-principal: #F9FAFB;
-  --cor-texto-secundario: #9CA3AF;
-  --cor-azul-destaque: #3B82F6;
-  --cor-verde-agua-destaque: #10B981;
-  --cor-fundo-input: #111827;
-  --fonte-principal: 'Inter', sans-serif;
-  --fonte-mono: 'Roboto Mono', monospace;
+–cor-fundo-principal: #111827;
+–cor-fundo-card: #1F2937;
+–cor-borda: #374151;
+–cor-texto-principal: #F9FAFB;
+–cor-texto-secundario: #9CA3AF;
+–cor-azul-destaque: #3B82F6;
+–cor-verde-agua-destaque: #10B981;
+–cor-fundo-input: #111827;
+–fonte-principal: ‘Inter’, sans-serif;
+–fonte-mono: ‘Roboto Mono’, monospace;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+	•	{
+margin: 0;
+padding: 0;
+box-sizing: border-box;
 }
 
 body {
-  font-family: var(--fonte-principal);
-  background: var(--cor-fundo-principal);
-  color: var(--cor-texto-principal);
-  padding: 2rem;
-  line-height: 1.6;
+font-family: var(–fonte-principal);
+background: var(–cor-fundo-principal);
+color: var(–cor-texto-principal);
+padding: 2rem;
+line-height: 1.6;
 }
 
-/* --- ESTRUTURA PRINCIPAL --- */
+/* — ESTRUTURA PRINCIPAL — */
 #app-container {
-  max-width: 1400px;
-  margin: 0 auto;
+max-width: 1400px;
+margin: 0 auto;
 }
 
 .header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
+display: flex;
+align-items: center;
+gap: 1rem;
+margin-bottom: 2rem;
 }
 
 .logo img {
-  height: 40px;
-  width: auto;
+height: 40px;
+width: auto;
 }
 
 .title {
-  font-size: 1.5rem;
-  font-weight: 600;
+font-size: 1.5rem;
+font-weight: 600;
 }
 
 .main-grid {
-  display: grid;
-  grid-template-columns: 60% 1fr;
-  gap: 1.5rem;
+display: grid;
+grid-template-columns: 60% 1fr;
+gap: 1.5rem;
 }
 
 .left-column, .right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
 }
 
-/* --- CARDS --- */
+/* — CARDS — */
 .card {
-  background: var(--cor-fundo-card);
-  border: 1px solid var(--cor-borda);
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
+background: var(–cor-fundo-card);
+border: 1px solid var(–cor-borda);
+border-radius: 12px;
+padding: 1.5rem;
+display: flex;
+flex-direction: column;
 }
 
 .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 1rem;
 }
 
 .card-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--cor-texto-secundario);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+font-size: 0.875rem;
+font-weight: 500;
+color: var(–cor-texto-secundario);
+text-transform: uppercase;
+letter-spacing: 0.05em;
 }
 
-/* --- Layout Flexível para Coluna da Esquerda --- */
+/* — Layout Flexível para Coluna da Esquerda (Desktop) — */
 .left-column {
-  height: calc(100vh - 8rem);
+height: calc(100vh - 8rem);
 }
 .input-card { flex: 0.4; }
 .actions-card { flex: 0.1; }
 .output-card { flex: 0.4; }
 
 .input-card textarea, .output-card textarea {
-  flex-grow: 1;
+flex-grow: 1;
 }
 
-/* --- TEXTAREA --- */
+/* — TEXTAREA — /
 textarea {
-  width: 100%;
-  background: var(--cor-fundo-input);
-  border: 1px solid var(--cor-borda);
-  border-radius: 8px;
-  padding: 1rem;
-  color: var(--cor-texto-principal);
-  font-family: var(--fonte-mono);
-  font-size: 0.9rem;
-  line-height: 1.6;
-  resize: none;
+width: 100%;
+background: var(–cor-fundo-input);
+border: 1px solid var(–cor-borda);
+border-radius: 8px;
+padding: 1rem;
+color: var(–cor-texto-principal);
+font-family: var(–fonte-mono);
+font-size: 0.9rem;
+line-height: 1.6;
+resize: none;
+min-height: 150px; / Altura mínima para mobile */
 }
 
 textarea:focus {
-  outline: none;
-  border-color: var(--cor-azul-destaque);
+outline: none;
+border-color: var(–cor-azul-destaque);
 }
 
-/* --- BOTÕES --- */
+/* — BOTÕES — */
 .actions-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr;
-  gap: 0.75rem;
+display: grid;
+grid-template-columns: 1fr 1fr 1.5fr;
+gap: 0.75rem;
 }
 
 .action-btn, .optimize-btn-main, .utility-btn {
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--cor-borda);
-  background: var(--cor-fundo-card);
-  color: var(--cor-texto-secundario);
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s;
+padding: 0.75rem 1rem;
+border-radius: 8px;
+border: 1px solid var(–cor-borda);
+background: var(–cor-fundo-card);
+color: var(–cor-texto-secundario);
+cursor: pointer;
+font-size: 0.875rem;
+font-weight: 500;
+transition: all 0.2s;
 }
 
 .action-btn:hover, .utility-btn:hover {
-  background: var(--cor-borda);
-  color: var(--cor-texto-principal);
+background: var(–cor-borda);
+color: var(–cor-texto-principal);
 }
 
 .action-btn.active {
-  background: var(--cor-azul-destaque);
-  color: var(--cor-texto-principal);
-  border-color: var(--cor-azul-destaque);
+background: var(–cor-azul-destaque);
+color: var(–cor-texto-principal);
+border-color: var(–cor-azul-destaque);
 }
 
 .optimize-btn-main {
-  background: var(--cor-verde-agua-destaque);
-  color: var(--cor-fundo-principal);
-  border-color: var(--cor-verde-agua-destaque);
-  font-weight: 700;
+background: var(–cor-verde-agua-destaque);
+color: var(–cor-fundo-principal);
+border-color: var(–cor-verde-agua-destaque);
+font-weight: 700;
 }
 .optimize-btn-main:disabled {
-  opacity: 0.5;
-  cursor: wait;
+opacity: 0.5;
+cursor: wait;
 }
 
 .utility-btn {
-  padding: 0.4rem 0.8rem;
-  background: transparent;
+padding: 0.4rem 0.8rem;
+background: transparent;
 }
 
-/* --- MÉTRICAS E PAINEL MIA-D --- */
+/* — MÉTRICAS E PAINEL MIA-D — */
 .metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 1rem;
 }
 
 .metric-card {
-  background: var(--cor-fundo-principal);
-  border: 1px solid var(--cor-borda);
-  border-radius: 8px;
-  padding: 1rem;
-  text-align: center;
+background: var(–cor-fundo-principal);
+border: 1px solid var(–cor-borda);
+border-radius: 8px;
+padding: 1rem;
+text-align: center;
 }
 
 .metric-label {
-  font-size: 0.75rem;
-  color: var(--cor-texto-secundario);
-  text-transform: uppercase;
+font-size: 0.75rem;
+color: var(–cor-texto-secundario);
+text-transform: uppercase;
 }
 
 .metric-value {
-  font-family: var(--fonte-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-top: 0.25rem;
+font-family: var(–fonte-mono);
+font-size: 1.5rem;
+font-weight: 700;
+margin-top: 0.25rem;
 }
 
 .metric-card.reduction .metric-value {
-  color: var(--cor-verde-agua-destaque);
+color: var(–cor-verde-agua-destaque);
 }
 
 .impact-section { margin-top: 2rem; }
 .impact-title-main { text-align: center; font-size: 1rem; font-weight: 600; }
-.impact-title-sub { text-align: center; font-size: 0.8rem; color: var(--cor-texto-secundario); margin-bottom: 1rem; }
+.impact-title-sub { text-align: center; font-size: 0.8rem; color: var(–cor-texto-secundario); margin-bottom: 1rem; }
 
 .impact-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 1rem;
 }
 
 .impact-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: var(--cor-fundo-principal);
-  border: 1px solid var(--cor-borda);
-  border-radius: 8px;
-  padding: 1rem;
+display: flex;
+align-items: center;
+gap: 1rem;
+background: var(–cor-fundo-principal);
+border: 1px solid var(–cor-borda);
+border-radius: 8px;
+padding: 1rem;
 }
 .impact-icon { font-size: 1.5rem; }
-.impact-metric-label { font-size: 0.75rem; color: var(--cor-texto-secundario); }
-.impact-metric-value { font-family: var(--fonte-mono); font-size: 1.1rem; font-weight: 600; }
-.impact-metric-value span { font-size: 0.8rem; color: var(--cor-texto-secundario); }
+.impact-metric-label { font-size: 0.75rem; color: var(–cor-texto-secundario); }
+.impact-metric-value { font-family: var(–fonte-mono); font-size: 1.1rem; font-weight: 600; }
+.impact-metric-value span { font-size: 0.8rem; color: var(–cor-texto-secundario); }
 
-/* --- PATROCINADOR E PRIVACIDADE --- */
+/* — PATROCINADOR E PRIVACIDADE — */
 .sponsor-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--cor-borda);
-  text-align: center;
+margin-top: 2rem;
+padding-top: 1.5rem;
+border-top: 1px solid var(–cor-borda);
+text-align: center;
 }
 .sponsor-logo img {
-  width: 120px;
-  height: auto;
-  border-radius: 8px;
+width: 120px;
+height: auto;
+border-radius: 8px;
 }
 .sponsor-label {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--cor-texto-secundario);
-  text-transform: uppercase;
+margin-top: 0.5rem;
+font-size: 0.75rem;
+color: var(–cor-texto-secundario);
+text-transform: uppercase;
 }
 
 .privacy-consent {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--cor-borda);
-  font-size: 0.8rem;
-  color: var(--cor-texto-secundario);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+margin-top: 2rem;
+padding-top: 1.5rem;
+border-top: 1px solid var(–cor-borda);
+font-size: 0.8rem;
+color: var(–cor-texto-secundario);
+display: flex;
+align-items: center;
+gap: 0.5rem;
 }
 
-/* --- NOTIFICAÇÃO DE LATÊNCIA --- */
+/* — NOTIFICAÇÃO DE LATÊNCIA — */
 .latency-notification {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: #4a3a1a;
-  border: 1px solid #a18a58;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  text-align: center;
-  color: #fde8c5;
+margin-top: 1rem;
+padding: 0.75rem;
+background-color: #4a3a1a;
+border: 1px solid #a18a58;
+border-radius: 6px;
+font-size: 0.8rem;
+text-align: center;
+color: #fde8c5;
+}
+
+/* ================================================== /
+/ — ESTILOS RESPONSIVOS PARA MOBILE — /
+/ ================================================== */
+
+@media (max-width: 992px) { /* Breakpoint para tablets e celulares grandes /
+body {
+padding: 1rem; / Menos preenchimento em telas menores */
+}
+
+.main-grid {
+/* Transforma o grid de 2 colunas em um layout de 1 coluna */
+grid-template-columns: 1fr;
+}
+
+.left-column {
+/* Remove a altura fixa para que o conteúdo flua naturalmente */
+height: auto;
+}
+
+.input-card, .actions-card, .output-card {
+/* Remove a base flex para que a altura seja determinada pelo conteúdo */
+flex: none;
+}
+
+.actions-container {
+/* Empilha os botões de ação verticalmente */
+grid-template-columns: 1fr;
+}
+
+.optimize-btn-main {
+/* Coloca o botão principal na primeira posição para fácil acesso */
+grid-row: 1;
+}
+
+.impact-metrics-grid {
+/* Empilha os cards de impacto em vez de ficarem lado a lado */
+grid-template-columns: 1fr;
+}
+}
+
+@media (max-width: 480px) { /* Breakpoint para celulares menores */
+.header {
+flex-direction: column;
+align-items: flex-start;
+margin-bottom: 1.5rem;
+}
+
+.title {
+font-size: 1.25rem;
+}
+
+.card {
+padding: 1rem;
+}
+
+.metrics-grid {
+/* Mantém 3 colunas mas com menos gap, ou empilha se necessário */
+gap: 0.5rem;
+}
+
+.metric-value {
+font-size: 1.2rem;
+}
+
+.impact-item {
+flex-direction: column;
+text-align: center;
+gap: 0.5rem;
+}
+
+.privacy-consent {
+align-items: flex-start;
+}
+.privacy-consent input[type=“checkbox”] {
+margin-top: 4px;
+}
 }

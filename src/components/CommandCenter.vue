@@ -74,7 +74,7 @@ export default {
       try {
         // CORREÇÃO FINAL: USANDO A URL DO BACKEND QUE VOCÊ INDICOU
         const response = await axios.post(
-          'https://appsofia.meshwave.com.br/api/v1/condenser/run', 
+          'https://https://sofia-c1t8.onrender.com/api/v1/condenser/run', 
           { text: this.originalText },
           { timeout: 300000 } 
          );

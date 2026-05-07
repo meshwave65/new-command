@@ -4,6 +4,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from groq import Groq
 from dotenv import load_dotenv
+import os
+
+load_dotenv(override=True)
+
+groq_api_key = os.getenv("GROQ_API_KEY")
+
+print("\n==============================")
+print("DEBUG GROQ API KEY")
+print("VALUE:", groq_api_key)
+print("LENGTH:", len(groq_api_key) if groq_api_key else 0)
+print("==============================\n")
+
 load_dotenv(dotenv_path="../.env")
 
 # ==================================================
@@ -72,7 +84,7 @@ async def condense_text(request: CondenseRequest):
     # ESCOLHA DE MODELO + PROMPT (INTACTO - NÃO MEXIDO)
     # ==================================================
     if request.mode == "llm":
-        model_name = "llama-3.1-8b-versatile"
+        model_name = "llama-3.1-8b-instant"
         system_prompt = (
             "Você é um assistente de IA especializado em condensar texto para outras IAs/LLMs. "
             "Seu objetivo é extrair a informação mais densa e relevante, removendo redundâncias, "
@@ -81,7 +93,7 @@ async def condense_text(request: CondenseRequest):
             "conclusões ou qualquer texto que não seja a condensação direta do conteúdo fornecido."
         )
     else:
-        model_name = "llama-3.1-8b-versatile"
+        model_name = "llama-3.3-70b-versatile"
         system_prompt = (
             "Você é um assistente de IA especializado em condensar texto para leitura humana. "
             "Seu objetivo é resumir o texto de forma concisa, clara e fácil de entender, "

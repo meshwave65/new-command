@@ -16,7 +16,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://condenser.meshwave.com.br"
+        "https://api.meshwave.com.br"
     ],
     allow_credentials=True,
     allow_methods=["*"],   # inclui OPTIONS (preflight)

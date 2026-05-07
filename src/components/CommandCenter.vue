@@ -8,20 +8,21 @@ export default {
       isOptimizing: false,
       isFirstOptimization: true,
       showLatencyWarning: false,
+
       optimizationMode: 'human',
 
       userId: null,
       shareLocationData: true,
 
-      apiBaseUrl: 'https://api.meshwave.com.br',
+      apiUrl: 'https://api.meshwave.com.br/api/v1/condenser/run',
 
       originalText:
-        "Importante: O brilho sutil na cor de destaque atrai o olhar. A Economia de Água é apresentada como uma métrica clara e direta.",
+        "Importante: O brilho sutil na cor de destaque atrai o olhar. A Economia de Água é apresentada como métrica clara e direta.",
 
       optimizedText: "O resultado da otimização aparecerá aqui...",
 
       condensedChars: 0,
-      reductionPercentage: 0.0,
+      reductionPercentage: 0,
       h2oSaved: 0,
       energySaved: 0,
       co2Avoided: 0,
@@ -39,81 +40,46 @@ export default {
   },
 
   watch: {
-    shareLocationData(newValue) {
+    shareLocationData(val) {
       try {
-        localStorage.setItem('meshwalker_consent', JSON.stringify(newValue));
+        localStorage.setItem('meshwalker_consent', JSON.stringify(val));
       } catch (e) {
-        console.warn("LocalStorage error:", e);
-      }
-    },
-
-    originalText(newText) {
-      if (
-        !this.isOptimizing &&
-        this.optimizedText &&
-        this.optimizedText.startsWith('O resultado')
-      ) {
-        this.calculateImpact(newText?.length || 0, 0);
+        console.warn("localStorage error:", e);
       }
     }
   },
 
   created() {
-    this.safeInit();
+    this.initSafe();
   },
 
   methods: {
 
-    // ==========================
-    // SAFE INIT (evita crash total)
-    // ==========================
-    safeInit() {
+    // =========================
+    // INIT SEGURO (evita tela branca)
+    // =========================
+    initSafe() {
       try {
-        this.initializeUserId();
+        let userId = this.getCookie('meshwalker_user_id');
+
+        if (!userId) {
+          userId = uuidv4();
+          this.setCookie('meshwalker_user_id', userId, 365);
+        }
+
+        this.userId = userId;
+
       } catch (e) {
-        console.error("init userId error:", e);
+        console.warn("user init error:", e);
         this.userId = uuidv4();
       }
 
-      try {
-        this.loadConsentPreference();
-      } catch (e) {
-        console.error("consent error:", e);
-        this.shareLocationData = true;
-      }
-
-      try {
-        this.calculateImpact(this.originalText.length, 0);
-      } catch (e) {
-        console.error("impact error:", e);
-      }
+      this.calculateImpact(this.originalText.length, 0);
     },
 
-    // ==========================
-    // USER ID
-    // ==========================
-    initializeUserId() {
-      let userId = this.getCookie('meshwalker_user_id');
-
-      if (!userId) {
-        userId = uuidv4();
-        this.setCookie('meshwalker_user_id', userId, 365);
-      }
-
-      this.userId = userId;
-    },
-
-    loadConsentPreference() {
-      const consent = localStorage.getItem('meshwalker_consent');
-
-      if (consent !== null) {
-        this.shareLocationData = JSON.parse(consent);
-      }
-    },
-
-    // ==========================
-    // API CALL (ROBUSTA)
-    // ==========================
+    // =========================
+    // API CALL (CORRIGIDO 100%)
+    // =========================
     async optimizeText() {
       if (this.isOptimizing || !this.originalText?.trim()) return;
 
@@ -125,27 +91,23 @@ export default {
       }
 
       try {
-        const url =
-          `${this.apiBaseUrl}/api/v1/condenser/run`;
-
         const response = await axios.post(
-          url,
+          this.apiUrl,
           {
             text: this.originalText,
-            mode: this.optimizationMode,
-            user_id: this.userId
+            mode: this.optimizationMode
           },
           {
             timeout: 300000,
             headers: {
-              'Content-Type': 'application/json'
+              "Content-Type": "application/json"
             }
           }
         );
 
         this.optimizedText =
           response?.data?.condensed_text ||
-          "Resposta inválida da API";
+          "Resposta vazia da API";
 
         this.calculateImpact(
           this.originalText.length,
@@ -156,7 +118,7 @@ export default {
         console.error("API error:", error);
 
         this.optimizedText =
-          "Erro ao conectar com servidor MeshWave";
+          "Erro ao conectar com API MeshWave";
 
         this.calculateImpact(this.originalText.length, 0);
 
@@ -173,9 +135,9 @@ export default {
       }
     },
 
-    // ==========================
+    // =========================
     // IMPACTO
-    // ==========================
+    // =========================
     calculateImpact(originalLength, condensedLength) {
       const BASE_H2O = 562;
       const BASE_ENERGY = 0.08;
@@ -195,9 +157,9 @@ export default {
       this.co2Avoided = BASE_CO2 * (reduction / 100);
     },
 
-    // ==========================
+    // =========================
     // MODOS
-    // ==========================
+    // =========================
     setOptimizationMode(mode) {
       this.optimizationMode = mode;
     },
@@ -208,35 +170,28 @@ export default {
       this.calculateImpact(0, 0);
     },
 
-    // ==========================
-    // COPY SAFE
-    // ==========================
+    // =========================
+    // COPY
+    // =========================
     copyOutputText() {
-      if (
-        !this.optimizedText ||
-        this.optimizedText.startsWith("Erro") ||
-        this.optimizedText.startsWith("O resultado")
-      ) return;
+      if (!this.optimizedText || this.optimizedText.startsWith("Erro")) return;
 
       navigator.clipboard.writeText(this.optimizedText)
-        .then(() => alert("Copiado!"))
-        .catch(err => console.warn("copy error:", err));
+        .then(() => alert("Texto copiado!"))
+        .catch(err => console.warn(err));
     },
 
-    // ==========================
+    // =========================
     // COOKIE SAFE
-    // ==========================
+    // =========================
     setCookie(name, value, days) {
       try {
-        let expires = "";
+        const date = new Date();
+        date.setTime(date.getTime() + days * 86400000);
 
-        if (days) {
-          const date = new Date();
-          date.setTime(date.getTime() + days * 86400000);
-          expires = "; expires=" + date.toUTCString();
-        }
+        document.cookie =
+          `${name}=${value}; expires=${date.toUTCString()}; path=/`;
 
-        document.cookie = `${name}=${value}${expires}; path=/`;
       } catch (e) {
         console.warn("cookie error:", e);
       }
@@ -244,18 +199,18 @@ export default {
 
     getCookie(name) {
       try {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(';');
+        const cookies = document.cookie.split(';');
 
-        for (let c of ca) {
-          while (c.charAt(0) === ' ') c = c.substring(1);
+        for (let c of cookies) {
+          c = c.trim();
 
-          if (c.indexOf(nameEQ) === 0) {
-            return c.substring(nameEQ.length);
+          if (c.startsWith(name + "=")) {
+            return c.substring(name.length + 1);
           }
         }
 
         return null;
+
       } catch (e) {
         return null;
       }
@@ -263,3 +218,17 @@ export default {
   }
 };
 </script>
+
+<template>
+  <div id="app-container">
+    <textarea v-model="originalText"></textarea>
+
+    <button @click="optimizeText" :disabled="isOptimizing">
+      {{ buttonText }}
+    </button>
+
+    <div>
+      {{ optimizedText }}
+    </div>
+  </div>
+</template>

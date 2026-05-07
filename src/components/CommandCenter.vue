@@ -74,8 +74,8 @@ export default {
       try {
         // CORREÇÃO FINAL: USANDO A URL DO BACKEND QUE VOCÊ INDICOU
         const response = await axios.post(
-          'https://https://sofia-c1t8.onrender.com/api/v1/condenser/run', 
-          { text: this.originalText },
+          'http://localhost:8000/api/v1/condenser/run', 
+          { text: this.originalText, mode: this.optimizationMode },
           { timeout: 300000 } 
          );
         

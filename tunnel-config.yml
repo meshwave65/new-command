@@ -1,0 +1,7 @@
+tunnel: 294ee1c2-f9b2-482f-95c4-66bb8c4d15d7
+credentials-file: /home/mesh/.cloudflared/294ee1c2-f9b2-482f-95c4-66bb8c4d15d7.json
+
+ingress:
+  - hostname: api.meshwave.com.br
+    service: http://localhost:8000
+  - service: http_status:404

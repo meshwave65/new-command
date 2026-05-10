@@ -74,7 +74,7 @@ export default {
       try {
         // CORREÇÃO FINAL: USANDO A URL DO BACKEND QUE VOCÊ INDICOU
         const response = await axios.post(
-          'https://api.meshwave.com.br/api/v1/condenser/run', 
+          'https://condenser.meshwave.com.br/api/v1/condenser/run', 
           { text: this.originalText },
           { timeout: 300000 } 
          );

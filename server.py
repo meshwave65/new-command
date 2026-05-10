@@ -3,9 +3,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from groq import Groq
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(dotenv_path=os.path.join(BASE_DIR, "../.env"))oq import Groq
+
+load_dotenv(
+    dotenv_path=os.path.join(BASE_DIR, "../.env")
+)
 
 # ==================================================
 # GROQ KEY

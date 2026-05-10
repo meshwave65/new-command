@@ -2,21 +2,10 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from groq import Groq
 from dotenv import load_dotenv
-import os
 
-load_dotenv(override=True)
-
-groq_api_key = os.getenv("GROQ_API_KEY")
-
-print("\n==============================")
-print("DEBUG GROQ API KEY")
-print("VALUE:", groq_api_key)
-print("LENGTH:", len(groq_api_key) if groq_api_key else 0)
-print("==============================\n")
-
-load_dotenv(dotenv_path="../.env")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(dotenv_path=os.path.join(BASE_DIR, "../.env"))oq import Groq
 
 # ==================================================
 # GROQ KEY
@@ -24,61 +13,57 @@ load_dotenv(dotenv_path="../.env")
 groq_api_key = os.getenv("GROQ_API_KEY")
 
 if not groq_api_key:
-    raise ValueError("A variável de ambiente GROQ_API_KEY não está definida.")
+    raise ValueError("GROQ_API_KEY não definida no ambiente")
+
+print("\n==============================")
+print("DEBUG GROQ API KEY")
+print("VALUE:", groq_api_key)
+print("LENGTH:", len(groq_api_key))
+print("==============================\n")
 
 client = Groq(api_key=groq_api_key)
 
 # ==================================================
-# APP
+# FASTAPI
 # ==================================================
 app = FastAPI(
     title="Sofia Condenser API",
-    description="API para condensação de texto usando Groq LLM.",
     version="1.0.0"
 )
 
 # ==================================================
-# CORS (SÓ CORREÇÃO REAL NECESSÁRIA)
+# CORS
 # ==================================================
-origins = [
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "https://sofia-c1t8.onrender.com",
-    "https://new-command.onrender.com",
-    "https://sofia-command.meshwave.com.br",
-    "http://sofia-command.meshwave.com.br",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=False,   # FIX REAL DO PREFLIGHT
+    allow_origins=[
+        "http://localhost:5177",
+        "http://localhost:5173",
+        "https://condenser.meshwave.com.br"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
+    expose_headers=["*"]
 )
 
 # ==================================================
-# MODELS
+# MODEL
 # ==================================================
 class CondenseRequest(BaseModel):
     text: str
     mode: str = "human"
 
-class CondenseResponse(BaseModel):
-    condensed_text: str
-
 # ==================================================
 # ENDPOINT
 # ==================================================
-@app.post("/api/v1/condenser/run", response_model=CondenseResponse)
+@app.post("/api/v1/condenser/run")
 async def condense_text(request: CondenseRequest):
 
-    if not request.text.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="O texto para condensar não pode estar vazio."
-        )
+    if not request.text or not request.text.strip():
+        return {
+            "condensed_text": "Texto vazio recebido."
+        }
 
     # ==================================================
     # ESCOLHA DE MODELO + PROMPT (INTACTO - NÃO MEXIDO)
@@ -103,31 +88,42 @@ async def condense_text(request: CondenseRequest):
         )
 
     try:
-        chat_completion = client.chat.completions.create(
+        response = client.chat.completions.create(
             model=model_name,
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": request.text},
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": f"Condense o seguinte texto:\n\n{request.text}"
+                }
             ],
             temperature=0.2,
-
-            # FIX REAL (EVITA max_tokens=0)
-            max_tokens=max(64, min(1024, len(request.text) // 2)),
+            max_tokens=1024
         )
 
-        return CondenseResponse(
-            condensed_text=chat_completion.choices[0].message.content
-        )
+        return {
+            "condensed_text": response.choices[0].message.content
+        }
 
     except Exception as e:
-        print("Erro Groq:", e)
+        print("ERRO GROQ:", str(e))
         raise HTTPException(
             status_code=500,
-            detail=f"Erro ao processar condensação: {str(e)}"
+            detail=str(e)
         )
 
 # ==================================================
-# RUN
+# HEALTH CHECK
+# ==================================================
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+# ==================================================
+# RUN LOCAL
 # ==================================================
 if __name__ == "__main__":
     import uvicorn
